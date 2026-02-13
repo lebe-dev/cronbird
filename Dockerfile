@@ -19,7 +19,10 @@ WORKDIR /app
 RUN apk update && \
     adduser -h /app -D cronbird && \
     chmod 700 /app && \
-    chown -R cronbird: /app
+    chown -R cronbird: /app && \
+    mkdir -p /data && \
+    chown cronbird:cronbird /data && \
+    chmod 755 /data
 
 COPY --from=app-build /build/target/release/cronbird /app/cronbird
 
