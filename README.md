@@ -12,6 +12,12 @@ When a cron job completes successfully, it sends a callback to cronbird. If a ca
 
 - **Lightweight** - Single binary, no external dependencies (no database, no Redis)
 - **BLAZING FAST 🦀** (Rust)
+- **Low memory footprint:**
+  ```bash
+  CONTAINER ID   NAME       CPU %     MEM USAGE / LIMIT     MEM %     NET I/O         BLOCK I/O       PIDS
+  8e839850292d   cronbird   0.00%     2.664MiB / 7.807GiB   0.03%     1.13kB / 126B   131kB / 4.1kB   11
+  ```
+- **Tiny image size** - `12.5 MB`
 - **Prometheus-compatible** - Native text exposition format + JSON metrics
 - **Authentication** - Bearer token support for callback endpoints (optional)
 - **State persistence** - Automatic periodic snapshots to JSON file
