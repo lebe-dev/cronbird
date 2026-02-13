@@ -64,6 +64,8 @@ All cron job identities are validated to prevent injection attacks and enforce c
 
 ## Container Security
 
+Check [trivy-scan-report.txt].
+
 ### Runtime Isolation
 
 cronbird runs in a non-root container with the following hardening:
