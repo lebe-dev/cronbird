@@ -60,3 +60,16 @@ Create the name of the service account to use
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
 {{- end }}
+
+{{/*
+Validate cronbird configuration
+Fails fast during helm install/upgrade if configuration is invalid
+*/}}
+{{- define "helm-chart.validateConfig" -}}
+{{- if and (not .Values.config.allowDynamic) (eq .Values.config.identities "") }}
+{{- fail "Configuration error: CRONBIRD_IDENTITIES cannot be empty when CRONBIRD_ALLOW_DYNAMIC is false. Either set config.identities or enable config.allowDynamic=true" }}
+{{- end }}
+{{- if eq (.Values.config.persistInterval | int) 0 }}
+{{- fail "Configuration error: CRONBIRD_PERSIST_INTERVAL must be greater than 0" }}
+{{- end }}
+{{- end }}
