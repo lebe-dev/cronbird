@@ -18,3 +18,7 @@ target
 !docs/**/*.md
 !README.md
 !DEV.md
+
+/*.tgz
+
+.env

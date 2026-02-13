@@ -16,3 +16,7 @@ target
 
 *.md
 /docs/
+
+/*.tgz
+
+.env*
