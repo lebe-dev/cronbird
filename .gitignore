@@ -15,5 +15,6 @@ target
 **/mutants.out*/
 
 *.md
-!README.md
 !docs/**/*.md
+!README.md
+!DEV.md
