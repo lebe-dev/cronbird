@@ -184,4 +184,19 @@ mod tests {
             Err(ConfigError::InvalidPersistInterval)
         ));
     }
+
+    #[test]
+    fn test_validate_empty_identities_with_dynamic_allowed() {
+        let config = Config {
+            listen_addr: "0.0.0.0:8080".parse().unwrap(),
+            identities: vec![],
+            allow_dynamic: true,
+            auth_token: None,
+            persist_path: PathBuf::from("./state.json"),
+            persist_interval: 60,
+            log_level: "info".to_string(),
+        };
+
+        assert!(config.validate().is_ok());
+    }
 }
