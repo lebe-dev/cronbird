@@ -1,5 +1,15 @@
 # Development
 
+## Getting Started
+
+```bash
+# Run tests
+just test
+
+# Build project
+just build
+```
+
 ## Architecture
 
 Project follows [hexagonal architecture](https://www.howtocodeit.com/guides/master-hexagonal-architecture-in-rust) (ports & adapters):
