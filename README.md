@@ -11,7 +11,7 @@ When a cron job completes successfully, it sends a callback to cronbird. If a ca
 ## Features
 
 - **Lightweight** - Single binary, no external dependencies (no database, no Redis)
-- **BLAZING FAST 🌝** (Rust)
+- **BLAZING FAST 🦀** (Rust)
 - **Prometheus-compatible** - Native text exposition format + JSON metrics
 - **Authentication** - Bearer token support for callback endpoints (optional)
 - **State persistence** - Automatic periodic snapshots to JSON file
