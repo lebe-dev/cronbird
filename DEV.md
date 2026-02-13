@@ -4,6 +4,38 @@
 
 cronbird follows hexagonal architecture (ports & adapters):
 
+```text
+                          ┌──────────────────────────┐
+                          │     Cronjobs/Scripts     │
+                          │ (POST /callback/{id})    │
+                          └────────────┬─────────────┘
+                                       │
+                                       │ HTTP Ping (Callback)
+                                       v
+                          ┌─────────────────────────┐
+                          │         cronbird        │
+                          │                         │
+                          │   ┌─────────────────┐   │
+                          │   │ In-memory State │   │
+                          │   │   (RwLock)      │   │
+                          │   └────────┬────────┘   │
+                          │            │            │
+         ┌────────────────┴────────────┼────────────┴────────────────┐
+         │                             │                             │
+         v                             v                             v
+┌─────────────────┐           ┌─────────────────┐           ┌───────────────────┐
+│ State Snapshots │           │    /metrics     │           │ /metrics/{id}     │
+│ (JSON file)     │           │  (Prometheus)   │           │   (JSON API)      │
+└─────────────────┘           └────────┬────────┘           └───────────────────┘
+                                       ^
+                                       │ Scrape (Pull)
+                                       │
+                          ┌────────────┴────────────┐
+                          │ Prometheus / Victoria   │
+                          │         Metrics         │
+                          └─────────────────────────┘
+```
+
 ```
 src/
 ├── domain/          # Core business logic
