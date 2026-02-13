@@ -1,0 +1,13 @@
+apiVersion: v2
+name: cronbird
+description: A Helm chart for cronbird - HTTP cron job monitoring service with Prometheus metrics
+
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+
+keywords:
+  - monitoring
+  - cron
+  - prometheus
+  - metrics
