@@ -17,7 +17,7 @@ FROM alpine:3.23.3
 WORKDIR /app
 
 RUN apk update && \
-    adduser -h /app -D cronbird && \
+    adduser -u 1001 -h /app -D cronbird && \
     chmod 700 /app && \
     chown -R cronbird: /app && \
     mkdir -p /data && \
