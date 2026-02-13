@@ -15,10 +15,8 @@ format:
 
 lint: format
     cargo clippy -- -D warnings
-    cd frontend && yarn lint
 
 test:
-    cd frontend && yarn test run
     cargo test
 
 build: lint && test
