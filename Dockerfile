@@ -2,7 +2,7 @@ FROM rust:1.93.0-alpine3.23 AS app-build
 
 WORKDIR /build
 
-RUN apk add musl-dev elfutils pkgconfig libressl-dev perl make mold upx
+RUN apk --no-cache add musl-dev elfutils pkgconfig libressl-dev perl make mold upx
 
 COPY . /build
 
@@ -16,8 +16,7 @@ FROM alpine:3.23.3
 
 WORKDIR /app
 
-RUN apk update && \
-    adduser -u 1001 -h /app -D cronbird && \
+RUN adduser -u 1001 -h /app -D cronbird && \
     chmod 700 /app && \
     chown -R cronbird: /app && \
     mkdir -p /data && \
