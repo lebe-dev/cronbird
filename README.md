@@ -42,19 +42,25 @@ docker compose up -d
 ```bash
 #!/bin/bash
 pg_dump mydb > /backup/mydb.sql && \
-curl -X POST http://localhost:8080/callback/daily-backup
+curl -X POST http://somehost:8080/callback/daily-backup
+```
+
+**With authentication enabled:**
+
+```bash
+curl -X POST -H "Authorization: Bearer your-secret-token-here" http://somehost:8080/callback/daily-backup
 ```
 
 2. **View metrics:**
 
 ```bash
 # Prometheus format (default)
-curl http://localhost:8080/metrics
+curl http://somehost:8080/metrics
 
 # JSON format
-curl -H "Accept: application/json" http://localhost:8080/metrics
+curl -H "Accept: application/json" http://somehost:8080/metrics
 # or
-curl http://localhost:8080/metrics?format=json
+curl http://somehost:8080/metrics?format=json
 ```
 
 3. **Configure Prometheus alerts:**
@@ -79,6 +85,15 @@ curl http://localhost:8080/metrics
 # You should see:
 # cronbird_last_callback_timestamp_seconds{identity="test-job"} 1739456789
 # cronbird_callback_total{identity="test-job"} 1
+```
+
+### Crontab Example
+
+You can add the callback directly to your crontab:
+
+```cron
+# Every day at 2:00 AM
+0 2 * * * /usr/local/bin/backup.sh && curl -X POST -H "Authorization: Bearer your-secret-token-here" http://localhost:8080/callback/daily-backup
 ```
 
 ## Configuration
@@ -125,7 +140,7 @@ Monitor critical backup operations:
 #!/bin/bash
 clickhouse-backup create && \
 clickhouse-backup upload && \
-curl -X POST http://cronbird/callback/clickhouse-backup-prod
+curl -X POST -H "Authorization: Bearer $CRONBIRD_TOKEN" http://cronbird/callback/clickhouse-backup-prod
 ```
 
 ### Data Pipelines
