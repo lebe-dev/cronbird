@@ -4,15 +4,8 @@ services:
     image: tinyops/cronbird:0.1.0
     restart: unless-stopped
     ports:
-      - "8080:8080"
-    environment:
-      CRONBIRD_LISTEN: "0.0.0.0:8080"
-      CRONBIRD_IDENTITIES: "clickhouse-backup-prod,pg-backup-staging"
-      CRONBIRD_ALLOW_DYNAMIC: "false"
-      CRONBIRD_AUTH_TOKEN: "${CRONBIRD_AUTH_TOKEN:-}"
-      CRONBIRD_PERSIST_PATH: "/data/cronbird-state.json"
-      CRONBIRD_PERSIST_INTERVAL: "60"
-      CRONBIRD_LOG_LEVEL: "info"
+      - "18080:8080"
+    env_file: .env
     volumes:
       - ./data:/data
     healthcheck:
