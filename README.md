@@ -35,6 +35,8 @@ cp .env.example .env
 docker compose up -d
 ```
 
+Other options: [Kubernetes (Helm)](docs/installation/KUBERNETES.md), [Build from Source](docs/installation/SOURCE.md).
+
 ### Basic Usage
 
 1. **Send a callback from your cron job:**
