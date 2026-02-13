@@ -43,7 +43,11 @@ stop-dev-image:
 ########################################
 
 test-chart:
-    helm template helm-chart/
+    @echo "Testing dynamic mode..."
+    @helm template helm-chart/ --set config.allowDynamic=true > /dev/null
+    @echo "Testing static mode with identities..."
+    @helm template helm-chart/ --set 'config.identities=job1\,job2' > /dev/null
+    @echo "✓ Chart validation passed"
 
 build-chart: test-chart
     helm package helm-chart/ --app-version {{ version }}
