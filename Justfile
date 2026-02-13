@@ -29,11 +29,8 @@ build: lint && test
 cleanup:
     rm -f cronbird-*.tgz
 
-run-backend:
+run:
     cargo run
-
-run-frontend:
-    cd frontend && yarn && npm run dev -- --port=4200
 
 start-dev-image:
     docker compose -f docker-compose-dev.yml up -d --build --force-recreate
