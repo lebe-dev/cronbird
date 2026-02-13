@@ -2,7 +2,7 @@
 
 ## Architecture
 
-cronbird follows hexagonal architecture (ports & adapters):
+Project follows [hexagonal architecture](https://www.howtocodeit.com/guides/master-hexagonal-architecture-in-rust) (ports & adapters):
 
 ```text
                           ┌──────────────────────────┐
@@ -35,6 +35,8 @@ cronbird follows hexagonal architecture (ports & adapters):
                           │         Metrics         │
                           └─────────────────────────┘
 ```
+
+File structure:
 
 ```
 src/
