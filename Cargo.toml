@@ -21,8 +21,8 @@ axum = { version = "0.8.8", features = ["json", "http1", "tokio", "macros"] }
 tower = "0.5.3"
 tower-http = { version = "0.6.8", features = ["trace"] }
 
-tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+tracing = "0.1.44"
+tracing-subscriber = { version = "0.3.22", features = ["env-filter"] }
 
 dotenvy = "0.15"
 
