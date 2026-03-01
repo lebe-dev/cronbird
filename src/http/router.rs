@@ -2,10 +2,29 @@ use crate::domain::CallbackStore;
 use crate::http::auth::AuthMiddleware;
 use crate::http::handlers::{callback, health_route, metrics, metrics_single};
 use axum::{
-    Router, middleware,
+    Router,
+    extract::Request,
+    http::{HeaderValue, header},
+    middleware::{self, Next},
+    response::Response,
     routing::{get, post},
 };
 use tower_http::limit::RequestBodyLimitLayer;
+
+/// Middleware to add security headers to all responses.
+async fn add_security_headers(request: Request, next: Next) -> Response {
+    let mut response = next.run(request).await;
+    let headers = response.headers_mut();
+
+    headers.insert(
+        header::X_CONTENT_TYPE_OPTIONS,
+        HeaderValue::from_static("nosniff"),
+    );
+    headers.insert(header::X_FRAME_OPTIONS, HeaderValue::from_static("DENY"));
+    headers.insert(header::CACHE_CONTROL, HeaderValue::from_static("no-store"));
+
+    response
+}
 
 /// Builds the HTTP router with all routes.
 pub fn build_router<S: CallbackStore>(
@@ -47,6 +66,7 @@ pub fn build_router<S: CallbackStore>(
         .merge(public_routes)
         .with_state(store)
         .layer(RequestBodyLimitLayer::new(1024)) // 1 KB — callbacks have no body
+        .layer(middleware::from_fn(add_security_headers))
 }
 
 #[cfg(test)]
@@ -161,5 +181,44 @@ mod tests {
             .unwrap();
 
         assert_eq!(response.status(), StatusCode::OK);
+    }
+
+    #[tokio::test]
+    async fn test_security_headers_present() {
+        let store = store_with_identity("job1");
+        let auth = AuthMiddleware::new(None);
+        let app = build_router(store, auth, false);
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/health")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        let headers = response.headers();
+
+        // Verify security headers are present
+        assert_eq!(
+            headers
+                .get(header::X_CONTENT_TYPE_OPTIONS)
+                .and_then(|h| h.to_str().ok()),
+            Some("nosniff")
+        );
+        assert_eq!(
+            headers
+                .get(header::X_FRAME_OPTIONS)
+                .and_then(|h| h.to_str().ok()),
+            Some("DENY")
+        );
+        assert_eq!(
+            headers
+                .get(header::CACHE_CONTROL)
+                .and_then(|h| h.to_str().ok()),
+            Some("no-store")
+        );
     }
 }

@@ -132,6 +132,18 @@ CRONBIRD_PERSIST_INTERVAL=60  # Seconds
 
 ## Network Security
 
+### Security Headers
+
+All HTTP responses include security headers to prevent common attacks:
+
+| Header | Value | Purpose |
+|--------|-------|---------|
+| `X-Content-Type-Options` | `nosniff` | Prevents MIME sniffing attacks; forces the browser to respect the Content-Type header |
+| `X-Frame-Options` | `DENY` | Prevents clickjacking by disallowing the response from being framed |
+| `Cache-Control` | `no-store` | Prevents caching of metrics and sensitive responses in browsers and proxies |
+
+These headers are applied globally to all endpoints (health, metrics, callback) to ensure consistent security posture.
+
 ### HTTP Protocol
 
 cronbird serves HTTP (not HTTPS). This is intentional because:
@@ -225,6 +237,9 @@ CRONBIRD_LOG_LEVEL=debug  # debug, info, warn, error
 | **Privilege Escalation** | Attacker exploits app to gain root access | Non-root container user |
 | **Denial of Service** | Attacker floods `/callback/*` with requests | No built-in rate limiting; use reverse proxy throttling |
 | **State Exfiltration** | Attacker reads `cronbird-state.json` | File permissions (600) + mount on encrypted volume |
+| **Clickjacking** | Attacker frames the app in a malicious page | X-Frame-Options: DENY header |
+| **MIME Sniffing** | Browser interprets response as different content type | X-Content-Type-Options: nosniff header |
+| **Cache Poisoning** | Cached metrics serve stale data to multiple users | Cache-Control: no-store header |
 
 ### Out-of-Scope Threats
 
