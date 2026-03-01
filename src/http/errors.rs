@@ -10,9 +10,10 @@ use serde_json::json;
 pub enum ApiError {
     Unauthorized,
     Forbidden(String),
-    NotFound(String),
+    NotFound,
     BadRequest(String),
-    InternalError(String),
+    StoreFull,
+    InternalError,
 }
 
 impl IntoResponse for ApiError {
@@ -20,9 +21,16 @@ impl IntoResponse for ApiError {
         let (status, message) = match self {
             ApiError::Unauthorized => (StatusCode::UNAUTHORIZED, "Unauthorized".to_string()),
             ApiError::Forbidden(msg) => (StatusCode::FORBIDDEN, msg),
-            ApiError::NotFound(msg) => (StatusCode::NOT_FOUND, msg),
+            ApiError::NotFound => (StatusCode::NOT_FOUND, "Not found".to_string()),
             ApiError::BadRequest(msg) => (StatusCode::BAD_REQUEST, msg),
-            ApiError::InternalError(msg) => (StatusCode::INTERNAL_SERVER_ERROR, msg),
+            ApiError::StoreFull => (
+                StatusCode::INSUFFICIENT_STORAGE,
+                "Identity limit reached".to_string(),
+            ),
+            ApiError::InternalError => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Internal server error".to_string(),
+            ),
         };
 
         let body = Json(json!({
@@ -45,7 +53,11 @@ impl From<crate::domain::StoreError> for ApiError {
             crate::domain::StoreError::IdentityNotAllowed(id) => {
                 ApiError::Forbidden(format!("Identity not allowed: {}", id))
             }
-            crate::domain::StoreError::Internal(msg) => ApiError::InternalError(msg),
+            crate::domain::StoreError::StoreFull => ApiError::StoreFull,
+            crate::domain::StoreError::Internal(msg) => {
+                tracing::error!("Internal store error: {}", msg);
+                ApiError::InternalError
+            }
         }
     }
 }

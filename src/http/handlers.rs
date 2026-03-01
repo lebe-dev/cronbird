@@ -47,10 +47,10 @@ pub async fn metrics<S: CallbackStore>(
     headers: HeaderMap,
     Query(params): Query<FormatQuery>,
 ) -> Result<Response, ApiError> {
-    let records = store
-        .get_all_records()
-        .await
-        .map_err(|e| ApiError::InternalError(e.to_string()))?;
+    let records = store.get_all_records().await.map_err(|e| {
+        tracing::error!("Failed to get all records: {}", e);
+        ApiError::InternalError
+    })?;
 
     // Determine format from query param or Accept header
     let format = determine_format(&headers, params.format.as_deref());
@@ -84,8 +84,11 @@ pub async fn metrics_single<S: CallbackStore>(
     let record = store
         .get_record(&identity)
         .await
-        .map_err(|e| ApiError::InternalError(e.to_string()))?
-        .ok_or_else(|| ApiError::NotFound(format!("Identity not found: {}", identity)))?;
+        .map_err(|e| {
+            tracing::error!("Failed to get record for {}: {}", identity, e);
+            ApiError::InternalError
+        })?
+        .ok_or(ApiError::NotFound)?;
 
     let format = determine_format(&headers, params.format.as_deref());
 

@@ -7,6 +7,8 @@ use std::future::Future;
 pub enum StoreError {
     #[error("Identity not allowed: {0}")]
     IdentityNotAllowed(String),
+    #[error("Store capacity exceeded")]
+    StoreFull,
     #[error("Internal store error: {0}")]
     Internal(String),
 }
