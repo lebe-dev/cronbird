@@ -43,10 +43,17 @@ config:
   # Log level (debug, info, warn, error)
   logLevel: "info"
 
+  # Protect metrics endpoints with authentication (optional, default: false)
+  # When true and authToken is set, GET /metrics and GET /metrics/{identity}
+  # require "Authorization: Bearer <token>".
+  # Configure Prometheus/VictoriaMetrics scrape_configs with bearer_token to authenticate.
+  protectMetrics: false
+
   # Secrets configuration
   secrets:
     # Bearer token for authentication (optional but recommended)
     # If set, all POST /callback/* requests must include "Authorization: Bearer <token>"
+    # When config.protectMetrics is true, also protects GET /metrics endpoints.
     # Leave empty to disable authentication
     authToken: ""
 

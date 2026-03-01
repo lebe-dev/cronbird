@@ -12,3 +12,4 @@ data:
   CRONBIRD_PERSIST_PATH: {{ .Values.config.persistPath | quote }}
   CRONBIRD_PERSIST_INTERVAL: {{ .Values.config.persistInterval | quote }}
   CRONBIRD_LOG_LEVEL: {{ .Values.config.logLevel | quote }}
+  CRONBIRD_PROTECT_METRICS: {{ .Values.config.protectMetrics | quote }}

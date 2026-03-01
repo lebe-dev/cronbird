@@ -6,5 +6,5 @@ mod router;
 
 pub use auth::AuthMiddleware;
 pub use errors::ApiError;
-pub use handlers::{callback, health, metrics, metrics_single};
+pub use handlers::{callback, health_route, metrics, metrics_single};
 pub use router::build_router;

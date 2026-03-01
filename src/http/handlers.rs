@@ -18,7 +18,7 @@ pub struct FormatQuery {
 
 /// Health check handler.
 /// GET /health
-pub async fn health() -> Json<serde_json::Value> {
+pub async fn health_route() -> Json<serde_json::Value> {
     Json(json!({
         "status": "ok"
     }))
@@ -145,7 +145,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_health() {
-        let response = health().await;
+        let response = health_route().await;
         assert_eq!(response.0["status"], "ok");
     }
 

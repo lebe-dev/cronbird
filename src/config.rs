@@ -19,6 +19,10 @@ pub struct Config {
     /// If None, authentication is disabled.
     pub auth_token: Option<String>,
 
+    /// Whether to require authentication for metrics endpoints.
+    /// Only effective when auth_token is also set.
+    pub protect_metrics: bool,
+
     /// Path to the state persistence file.
     pub persist_path: PathBuf,
 
@@ -54,6 +58,11 @@ impl Config {
             .ok()
             .filter(|s| !s.is_empty());
 
+        let protect_metrics = std::env::var("CRONBIRD_PROTECT_METRICS")
+            .unwrap_or_else(|_| "false".to_string())
+            .parse()
+            .unwrap_or(false);
+
         let persist_path = std::env::var("CRONBIRD_PERSIST_PATH")
             .unwrap_or_else(|_| "./cronbird-state.json".to_string())
             .into();
@@ -70,6 +79,7 @@ impl Config {
             identities,
             allow_dynamic,
             auth_token,
+            protect_metrics,
             persist_path,
             persist_interval,
             log_level,
@@ -123,6 +133,7 @@ mod tests {
             identities: vec!["job1".to_string(), "job2".to_string()],
             allow_dynamic: true,
             auth_token: None,
+            protect_metrics: false,
             persist_path: PathBuf::from("./state.json"),
             persist_interval: 60,
             log_level: "info".to_string(),
@@ -138,6 +149,7 @@ mod tests {
             identities: vec!["job1".to_string(), "job2".to_string()],
             allow_dynamic: false,
             auth_token: None,
+            protect_metrics: false,
             persist_path: PathBuf::from("./state.json"),
             persist_interval: 60,
             log_level: "info".to_string(),
@@ -156,6 +168,7 @@ mod tests {
             identities: vec![],
             allow_dynamic: false,
             auth_token: None,
+            protect_metrics: false,
             persist_path: PathBuf::from("./state.json"),
             persist_interval: 60,
             log_level: "info".to_string(),
@@ -174,6 +187,7 @@ mod tests {
             identities: vec!["job1".to_string()],
             allow_dynamic: false,
             auth_token: None,
+            protect_metrics: false,
             persist_path: PathBuf::from("./state.json"),
             persist_interval: 0,
             log_level: "info".to_string(),
@@ -192,11 +206,45 @@ mod tests {
             identities: vec![],
             allow_dynamic: true,
             auth_token: None,
+            protect_metrics: false,
             persist_path: PathBuf::from("./state.json"),
             persist_interval: 60,
             log_level: "info".to_string(),
         };
 
         assert!(config.validate().is_ok());
+    }
+
+    #[test]
+    fn test_protect_metrics_default_false() {
+        let config = Config {
+            listen_addr: "0.0.0.0:8080".parse().unwrap(),
+            identities: vec!["job1".to_string()],
+            allow_dynamic: false,
+            auth_token: None,
+            protect_metrics: false,
+            persist_path: PathBuf::from("./state.json"),
+            persist_interval: 60,
+            log_level: "info".to_string(),
+        };
+
+        assert!(!config.protect_metrics);
+    }
+
+    #[test]
+    fn test_protect_metrics_enabled() {
+        let config = Config {
+            listen_addr: "0.0.0.0:8080".parse().unwrap(),
+            identities: vec!["job1".to_string()],
+            allow_dynamic: false,
+            auth_token: Some("secret".to_string()),
+            protect_metrics: true,
+            persist_path: PathBuf::from("./state.json"),
+            persist_interval: 60,
+            log_level: "info".to_string(),
+        };
+
+        assert!(config.protect_metrics);
+        assert!(config.auth_token.is_some());
     }
 }

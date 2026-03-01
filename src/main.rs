@@ -49,6 +49,16 @@ async fn main() -> anyhow::Result<()> {
             "disabled"
         }
     );
+    tracing::info!(
+        "Metrics authentication: {}",
+        if config.protect_metrics && config.auth_token.is_some() {
+            "enabled"
+        } else if config.protect_metrics {
+            "requested but no token set (metrics remain public)"
+        } else {
+            "disabled"
+        }
+    );
     tracing::info!("Persist path: {}", config.persist_path.display());
     tracing::info!("Persist interval: {}s", config.persist_interval);
 
@@ -89,7 +99,7 @@ async fn main() -> anyhow::Result<()> {
 
     tracing::debug!("Building HTTP router");
     let auth = AuthMiddleware::new(config.auth_token.clone());
-    let app = build_router(store.clone(), auth);
+    let app = build_router(store.clone(), auth, config.protect_metrics);
 
     tracing::debug!("Binding to {}", config.listen_addr);
     let listener = tokio::net::TcpListener::bind(&config.listen_addr)
