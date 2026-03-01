@@ -5,6 +5,7 @@ use cronbird::{
     http::{AuthMiddleware, build_router},
 };
 use std::sync::Arc;
+use std::time::Duration;
 use tokio::signal;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
@@ -153,7 +154,9 @@ async fn shutdown_signal(
     persist_handle.abort();
 
     tracing::info!("Performing final state persistence before exit");
-    if let Err(e) = persister.final_persist(store).await {
-        tracing::error!("Failed to perform final persist: {}", e);
+    match tokio::time::timeout(Duration::from_secs(5), persister.final_persist(store)).await {
+        Ok(Ok(())) => tracing::info!("Final persist completed"),
+        Ok(Err(e)) => tracing::error!("Final persist failed: {}", e),
+        Err(_) => tracing::error!("Final persist timed out"),
     }
 }
