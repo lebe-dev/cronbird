@@ -3,6 +3,9 @@ use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
+/// Maximum number of dynamic identities accepted before rejecting new ones.
+const MAX_DYNAMIC_IDENTITIES: usize = 10_000;
+
 /// In-memory implementation of CallbackStore.
 /// Uses Arc<RwLock<HashMap>> for concurrent access.
 #[derive(Debug, Clone)]
@@ -53,6 +56,18 @@ impl CallbackStore for InMemoryStore {
         );
 
         let mut data = self.data.write().await;
+
+        if self.allowed_identities.is_none()
+            && !data.contains_key(identity.as_str())
+            && data.len() >= MAX_DYNAMIC_IDENTITIES
+        {
+            tracing::warn!(
+                "Dynamic identity limit ({}) reached, rejecting: {}",
+                MAX_DYNAMIC_IDENTITIES,
+                identity
+            );
+            return Err(StoreError::StoreFull);
+        }
 
         data.entry(identity.to_string())
             .and_modify(|record| {
@@ -165,6 +180,26 @@ mod tests {
 
         let records = store.get_all_records().await.unwrap();
         assert_eq!(records.len(), 2);
+    }
+
+    #[tokio::test]
+    async fn test_dynamic_identity_limit() {
+        let store = InMemoryStore::new(None);
+
+        // Fill up to the limit
+        for i in 0..MAX_DYNAMIC_IDENTITIES {
+            let id = Identity::new(format!("job-{}", i)).unwrap();
+            store.record_callback(&id).await.unwrap();
+        }
+
+        // The next new identity must be rejected
+        let overflow = Identity::new("overflow-job").unwrap();
+        let result = store.record_callback(&overflow).await;
+        assert!(matches!(result, Err(StoreError::StoreFull)));
+
+        // Existing identities still work
+        let existing = Identity::new("job-0").unwrap();
+        assert!(store.record_callback(&existing).await.is_ok());
     }
 
     #[tokio::test]
