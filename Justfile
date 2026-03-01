@@ -24,6 +24,9 @@ lint: format
 test:
     cargo test
 
+coverage:
+    cargo llvm-cov
+
 build: lint && test
     cargo build
 
