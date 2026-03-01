@@ -194,4 +194,67 @@ mod tests {
         let format = determine_format(&headers, None);
         assert!(matches!(format, MetricsFormat::Prometheus));
     }
+
+    #[tokio::test]
+    async fn test_metrics_empty_store() {
+        let store = InMemoryStore::new(None);
+        let result = metrics(
+            State(store),
+            HeaderMap::new(),
+            Query(FormatQuery { format: None }),
+        )
+        .await;
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap().status(), StatusCode::OK);
+    }
+
+    #[tokio::test]
+    async fn test_metrics_json_format() {
+        let store = InMemoryStore::new(None);
+        let id = Identity::new("job1").unwrap();
+        store.record_callback(&id).await.unwrap();
+
+        let result = metrics(
+            State(store),
+            HeaderMap::new(),
+            Query(FormatQuery {
+                format: Some("json".to_string()),
+            }),
+        )
+        .await;
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap().status(), StatusCode::OK);
+    }
+
+    #[tokio::test]
+    async fn test_metrics_single_returns_record() {
+        let store = InMemoryStore::new(None);
+        let id = Identity::new("job1").unwrap();
+        store.record_callback(&id).await.unwrap();
+
+        let result = metrics_single(
+            State(store),
+            Path("job1".to_string()),
+            HeaderMap::new(),
+            Query(FormatQuery { format: None }),
+        )
+        .await;
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap().status(), StatusCode::OK);
+    }
+
+    #[tokio::test]
+    async fn test_metrics_single_not_found() {
+        use crate::http::errors::ApiError;
+        let store = InMemoryStore::new(None);
+
+        let result = metrics_single(
+            State(store),
+            Path("nonexistent".to_string()),
+            HeaderMap::new(),
+            Query(FormatQuery { format: None }),
+        )
+        .await;
+        assert!(matches!(result, Err(ApiError::NotFound)));
+    }
 }
