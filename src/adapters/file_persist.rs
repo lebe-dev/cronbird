@@ -193,4 +193,22 @@ mod tests {
         let tmp_path = PathBuf::from(format!("{}.tmp.{}", path.display(), std::process::id()));
         assert!(!tmp_path.exists());
     }
+
+    #[tokio::test]
+    async fn test_final_persist() {
+        let temp_dir = TempDir::new().unwrap();
+        let path = temp_dir.path().join("state.json");
+
+        let persister = FilePersister::new(&path, 60);
+        let store = InMemoryStore::new(None);
+
+        let id = Identity::new("shutdown-job").unwrap();
+        store.record_callback(&id).await.unwrap();
+
+        persister.final_persist(store).await.unwrap();
+
+        let loaded = persister.load_initial_state().await.unwrap();
+        assert_eq!(loaded.len(), 1);
+        assert!(loaded.contains_key("shutdown-job"));
+    }
 }
