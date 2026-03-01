@@ -1,7 +1,12 @@
 version := `cat Cargo.toml | grep version | head -1 | cut -d " " -f 3 | tr -d "\""`
+chartName := `cat helm-chart/Chart.yaml | yq -r '.name'`
 chartVersion := `cat helm-chart/Chart.yaml | yq -r '.version'`
 image := "tinyops/cronbird"
 trivyReportFile := "docs/security/trivy-scan-report.txt"
+dockleReportFile := "docs/security/dockle-scan-report.txt"
+
+cleanup:
+    rm -f {{ chartName }}-*.tgz
 
 init:
     rustup component add clippy
@@ -25,9 +30,6 @@ build: lint && test
 ########################################
 # DEV ENV
 ########################################
-
-cleanup:
-    rm -f cronbird-*.tgz
 
 run:
     cargo run
@@ -57,14 +59,14 @@ release-chart: build-chart
     git clone git@github.com:tinyops-ru/tinyops-ru.github.io.git helm-repo
     bash -euo pipefail -c '\
         cd helm-repo && \
-        cp ../cronbird-{{ chartVersion }}.tgz helm-charts/ && \
+        cp ../{{ chartName }}-{{ chartVersion }}.tgz helm-charts/ && \
         helm repo index helm-charts/ && \
         if [ -z "$(git status --porcelain)" ]; then \
-            echo "Chart cronbird-{{ chartVersion }} already published, skipping." && \
+            echo "Chart {{ chartName }}-{{ chartVersion }} already published, skipping." && \
             exit 0; \
         fi && \
         git add helm-charts/ && \
-        git commit -m "Add helm chart: cronbird-{{ chartVersion }}" && \
+        git commit -m "Add helm chart: {{ chartName }}-{{ chartVersion }}" && \
         git push'
     rm -rf helm-repo
 
@@ -74,6 +76,9 @@ release-chart: build-chart
 
 trivy:
     trivy image --severity HIGH,CRITICAL {{ image }}:{{ version }}
+
+dockle:
+    dockle {{ image }}:{{ version }}
 
 ########################################
 # RELEASE
@@ -87,6 +92,10 @@ trivy-save-reports:
     trivy config Dockerfile >> {{ trivyReportFile }}
     trivy image --severity HIGH,CRITICAL {{ image }}:{{ version }} >> {{ trivyReportFile }}
 
+dockle-save-reports:
+    dockle --no-color {{ image }}:{{ version }} > {{ dockleReportFile }}
+
 release: build-release-image && release-chart
     docker push {{ image }}:{{ version }}
     just trivy-save-reports
+    just dockle-save-reports
