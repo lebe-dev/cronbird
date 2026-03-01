@@ -62,9 +62,10 @@ All cron job identities are validated to prevent injection attacks and enforce c
 - **JSON/XML Injection**: Identities are used only as HashMap keys and Prometheus label values; the validation ensures they cannot inject control characters.
 - **Command Injection**: If identities are used in downstream scripts or commands, the restricted character set provides defense-in-depth.
 
-## Container Security
+## Container Security Reports
 
-Check [trivy-scan-report.txt].
+- [trivy-scan-report.txt](trivy-scan-report.txt).
+- [dockle-scan-report.txt](dockle-scan-report.txt).
 
 ### Runtime Isolation
 
