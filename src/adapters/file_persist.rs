@@ -59,6 +59,8 @@ impl FilePersister {
 
     /// Saves the current state to disk using atomic write.
     /// Writes to a temporary file first, then renames to prevent corruption.
+    /// Uses unique temp file name (with PID) to prevent collisions when multiple
+    /// instances write to the same directory.
     async fn save_snapshot(
         &self,
         data: &HashMap<String, CallbackRecord>,
@@ -66,7 +68,11 @@ impl FilePersister {
         tracing::debug!("Serializing state for snapshot");
         let json = serde_json::to_string_pretty(data)?;
 
-        let tmp_path = self.path.with_extension("tmp");
+        let tmp_path = PathBuf::from(format!(
+            "{}.tmp.{}",
+            self.path.display(),
+            std::process::id()
+        ));
         tracing::debug!("Writing to temporary file: {}", tmp_path.display());
         tokio::fs::write(&tmp_path, json).await?;
 
@@ -183,8 +189,8 @@ mod tests {
         // Verify main file exists
         assert!(path.exists());
 
-        // Verify tmp file doesn't exist
-        let tmp_path = path.with_extension("tmp");
+        // Verify tmp file doesn't exist (format: {path}.tmp.{pid})
+        let tmp_path = PathBuf::from(format!("{}.tmp.{}", path.display(), std::process::id()));
         assert!(!tmp_path.exists());
     }
 }
