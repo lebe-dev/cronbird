@@ -73,49 +73,47 @@ impl JsonMetricsResponse {
     }
 }
 
-/// Converts a Unix timestamp to RFC3339 format.
+/// Converts a Unix timestamp to RFC3339 format (UTC).
+///
+/// Uses Howard Hinnant's civil_from_days algorithm for correct Gregorian calendar
+/// arithmetic, including leap years. Handles negative timestamps safely.
 fn timestamp_to_rfc3339(timestamp: i64) -> String {
-    use std::time::{Duration, UNIX_EPOCH};
-
-    let duration = Duration::from_secs(timestamp as u64);
-    let datetime = UNIX_EPOCH + duration;
-
-    // Format as RFC3339
-    // Using chrono would be cleaner, but we're avoiding dependencies
-    // This is a simple implementation for UTC times
-    let secs_since_epoch = datetime
-        .duration_since(UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_secs();
-
-    // Simple calculation for UTC time
-    const SECS_PER_DAY: u64 = 86400;
+    const SECS_PER_DAY: i64 = 86400;
     const SECS_PER_HOUR: u64 = 3600;
     const SECS_PER_MINUTE: u64 = 60;
 
-    // Days since epoch (1970-01-01 was a Thursday)
-    let days = secs_since_epoch / SECS_PER_DAY;
-    let remaining = secs_since_epoch % SECS_PER_DAY;
+    // div_euclid / rem_euclid handle negative timestamps correctly.
+    let days = timestamp.div_euclid(SECS_PER_DAY);
+    let day_secs = timestamp.rem_euclid(SECS_PER_DAY) as u64;
 
-    let hours = remaining / SECS_PER_HOUR;
-    let remaining = remaining % SECS_PER_HOUR;
+    let hours = day_secs / SECS_PER_HOUR;
+    let minutes = (day_secs % SECS_PER_HOUR) / SECS_PER_MINUTE;
+    let seconds = day_secs % SECS_PER_MINUTE;
 
-    let minutes = remaining / SECS_PER_MINUTE;
-    let seconds = remaining % SECS_PER_MINUTE;
-
-    // Simplified date calculation (good enough for timestamps after 2000)
-    // For production, use chrono or time crate
-    let year = 1970 + (days / 365);
-    let day_of_year = days % 365;
-
-    // Very simplified month/day (assumes 30-day months for simplicity)
-    let month = (day_of_year / 30) + 1;
-    let day = (day_of_year % 30) + 1;
+    let (year, month, day) = civil_from_days(days);
 
     format!(
         "{:04}-{:02}-{:02}T{:02}:{:02}:{:02}Z",
         year, month, day, hours, minutes, seconds
     )
+}
+
+/// Converts days-since-Unix-epoch to a proleptic Gregorian (year, month, day).
+///
+/// Algorithm: Howard Hinnant, "date_algorithms" (public domain).
+/// <https://howardhinnant.github.io/date_algorithms.html>
+fn civil_from_days(days: i64) -> (i32, u32, u32) {
+    let z = days + 719_468; // shift epoch from 1970-01-01 to 0000-03-01
+    let era = (if z >= 0 { z } else { z - 146_096 }) / 146_097;
+    let doe = (z - era * 146_097) as u32; // day of era [0, 146096]
+    let yoe = (doe - doe / 1_460 + doe / 36_524 - doe / 146_096) / 365; // year of era [0, 399]
+    let y = yoe as i32 + era as i32 * 400;
+    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100); // day of year [0, 365]
+    let mp = (5 * doy + 2) / 153; // month piece [0, 11]
+    let d = doy - (153 * mp + 2) / 5 + 1; // day [1, 31]
+    let m = if mp < 10 { mp + 3 } else { mp - 9 }; // month [1, 12]
+    let year = y + if m <= 2 { 1 } else { 0 };
+    (year, m, d)
 }
 
 #[cfg(test)]
@@ -165,6 +163,18 @@ mod tests {
         assert_eq!(response.metrics[0].identity, "clickhouse-backup-prod");
         assert_eq!(response.metrics[0].last_callback_ts, 1739456789);
         assert_eq!(response.metrics[0].callback_count, 42);
+    }
+
+    #[test]
+    fn test_timestamp_to_rfc3339() {
+        // Unix epoch
+        assert_eq!(timestamp_to_rfc3339(0), "1970-01-01T00:00:00Z");
+        // 2026-03-01T00:00:00Z = 20513 days * 86400
+        assert_eq!(timestamp_to_rfc3339(1_772_323_200), "2026-03-01T00:00:00Z");
+        // Leap day: 2024-02-29T12:00:00Z = 19782 days * 86400 + 43200
+        assert_eq!(timestamp_to_rfc3339(1_709_208_000), "2024-02-29T12:00:00Z");
+        // Negative: 1969-12-31T23:59:59Z = -1
+        assert_eq!(timestamp_to_rfc3339(-1), "1969-12-31T23:59:59Z");
     }
 
     #[test]
