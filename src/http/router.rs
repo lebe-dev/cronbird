@@ -5,6 +5,7 @@ use axum::{
     Router, middleware,
     routing::{get, post},
 };
+use tower_http::limit::RequestBodyLimitLayer;
 
 /// Builds the HTTP router with all routes.
 pub fn build_router<S: CallbackStore>(store: S, auth: AuthMiddleware) -> Router {
@@ -29,4 +30,5 @@ pub fn build_router<S: CallbackStore>(store: S, auth: AuthMiddleware) -> Router 
         .merge(callback_routes)
         .merge(public_routes)
         .with_state(store)
+        .layer(RequestBodyLimitLayer::new(1024)) // 1 KB — callbacks have no body
 }
