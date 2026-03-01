@@ -80,7 +80,7 @@ podLabels: {}
 # Sets filesystem permissions and security policies at pod level
 podSecurityContext:
   runAsNonRoot: true
-  fsGroup: 1001
+  fsGroup: 10001
   seccompProfile:
     type: RuntimeDefault
 
@@ -92,8 +92,8 @@ securityContext:
       - ALL
   readOnlyRootFilesystem: true
   runAsNonRoot: true
-  runAsUser: 1001
-  runAsGroup: 1001
+  runAsUser: 10001
+  runAsGroup: 10001
   allowPrivilegeEscalation: false
   seccompProfile:
     type: RuntimeDefault
