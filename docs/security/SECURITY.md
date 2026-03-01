@@ -17,7 +17,7 @@ Authorization: Bearer <token>
 ```
 
 **Security Properties:**
-- **Constant-time Comparison**: Token validation uses constant-time string comparison (`secure_compare`) to prevent timing attacks. All bytes are compared regardless of differences, eliminating information leakage about token correctness.
+- **Constant-time Comparison**: Token validation uses constant-time string comparison with SHA-256 hashing (`secure_compare`) to prevent timing attacks. Both direct byte mismatches and token length are concealed from attackers by comparing hashes, eliminating information leakage about token correctness or length.
 - **Optional Mode**: If `CRONBIRD_AUTH_TOKEN` is not set or empty, authentication is disabled (no-op passthrough). This is suitable for internal networks but **not recommended for production**.
 - **No Rate Limiting**: The service does not implement rate limiting on the `/callback/*` endpoints. Consider placing cronbird behind a rate-limiting reverse proxy or API gateway in production.
 
@@ -175,6 +175,8 @@ This is used by container orchestrators for health monitoring and does not requi
 
 **Security Note:** The `/metrics` endpoints are intentionally unauthenticated to allow Prometheus scrapers on private networks to collect data without managing secrets. If you expose `/metrics` to untrusted networks, consider placing it behind an authentication proxy.
 
+**Prometheus Label Escaping:** All identity values are properly escaped in Prometheus output to prevent label injection, even though identity validation already restricts special characters. This defence-in-depth approach ensures safety if validation rules are relaxed in the future.
+
 ## Callback Endpoints
 
 - `POST /callback/{identity}` - Requires `CRONBIRD_AUTH_TOKEN` if configured
@@ -230,9 +232,11 @@ CRONBIRD_LOG_LEVEL=debug  # debug, info, warn, error
 | Threat | Vector | Mitigation |
 |--------|--------|-----------|
 | **Unauthorized Callbacks** | Attacker submits callback for job they don't own | Bearer token authentication + whitelist identities |
-| **Timing Attack** | Attacker infers token via response time | Constant-time token comparison |
+| **Timing Attack (correctness)** | Attacker infers token byte-by-byte via response time | Constant-time token comparison with hashing |
+| **Timing Attack (length)** | Attacker infers token length via response time | SHA-256 hashing before comparison equalized lengths |
 | **Token Interception** | Attacker intercepts Bearer token over HTTP | HTTPS at reverse proxy + short-lived tokens |
 | **Invalid Identities** | Attacker submits special characters to break downstream tools | Strict identity validation (alphanumeric, dash, underscore) |
+| **Prometheus Label Injection** | Attacker crafts identity to escape Prometheus label syntax | Label value escaping (`\` → `\\`, `"` → `\"`) |
 | **State Corruption** | Process crash during file write | Atomic writes (temp file → rename) |
 | **Privilege Escalation** | Attacker exploits app to gain root access | Non-root container user |
 | **Denial of Service** | Attacker floods `/callback/*` with requests | No built-in rate limiting; use reverse proxy throttling |

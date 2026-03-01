@@ -1,6 +1,13 @@
 use crate::domain::{CallbackRecord, Identity};
 use serde::Serialize;
 
+/// Escapes special characters in Prometheus label values.
+/// Defence-in-depth: escapes `\` and `"` even though Identity validation
+/// prevents these characters, in case validation is relaxed in the future.
+fn escape_label_value(value: &str) -> String {
+    value.replace('\\', "\\\\").replace('"', "\\\"")
+}
+
 /// Formats metrics in Prometheus text exposition format.
 pub fn format_prometheus(records: &[(Identity, CallbackRecord)]) -> String {
     let mut output = String::new();
@@ -9,10 +16,10 @@ pub fn format_prometheus(records: &[(Identity, CallbackRecord)]) -> String {
     output.push_str("# TYPE cronbird_last_callback_timestamp_seconds gauge\n");
 
     for (identity, record) in records {
+        let escaped_identity = escape_label_value(identity.as_str());
         output.push_str(&format!(
             "cronbird_last_callback_timestamp_seconds{{identity=\"{}\"}} {}\n",
-            identity.as_str(),
-            record.last_callback_ts
+            escaped_identity, record.last_callback_ts
         ));
     }
 
@@ -22,10 +29,10 @@ pub fn format_prometheus(records: &[(Identity, CallbackRecord)]) -> String {
     output.push_str("# TYPE cronbird_callback_total counter\n");
 
     for (identity, record) in records {
+        let escaped_identity = escape_label_value(identity.as_str());
         output.push_str(&format!(
             "cronbird_callback_total{{identity=\"{}\"}} {}\n",
-            identity.as_str(),
-            record.callback_count
+            escaped_identity, record.callback_count
         ));
     }
 
@@ -187,5 +194,14 @@ mod tests {
 
         let json_response = JsonMetricsResponse::from_records(&records);
         assert!(json_response.metrics.is_empty());
+    }
+
+    #[test]
+    fn test_label_escaping() {
+        // Test escape_label_value with backslash and quote characters
+        assert_eq!(escape_label_value("normal"), "normal");
+        assert_eq!(escape_label_value("with\\backslash"), "with\\\\backslash");
+        assert_eq!(escape_label_value("with\"quote"), "with\\\"quote");
+        assert_eq!(escape_label_value("both\\\"chars"), "both\\\\\\\"chars");
     }
 }
