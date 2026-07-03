@@ -1,4 +1,4 @@
-FROM rust:1.93.1-alpine3.23 AS app-build
+FROM rust:1.96.1-alpine3.24 AS app-build
 
 WORKDIR /build
 
@@ -12,7 +12,7 @@ RUN cargo build --release && \
     upx -9 --lzma target/release/cronbird && \
     chmod +x target/release/cronbird
 
-FROM alpine:3.23.3
+FROM alpine:3.24
 
 WORKDIR /app
 
