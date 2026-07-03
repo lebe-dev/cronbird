@@ -7,7 +7,7 @@ Helm chart for deploying [cronbird](https://github.com/lebe-dev/cronbird) - a li
 ```bash
 helm repo add tinyops https://tinyops.ru/helm-charts/
 helm repo update
-helm upgrade --install --create-namespace -n cronbird cronbird tinyops/cronbird --version 0.1.0
+helm upgrade --install --create-namespace -n cronbird cronbird tinyops/cronbird --version 1.0.0
 ```
 
 ## Uninstallation
