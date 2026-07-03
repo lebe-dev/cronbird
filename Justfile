@@ -12,6 +12,9 @@ init:
     rustup component add clippy
     cargo install cargo-llvm-cov
 
+bump-deps:
+    cargo update
+
 build-dev-image:
     docker build --progress=plain --platform=linux/amd64 .
 
