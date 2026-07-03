@@ -77,7 +77,7 @@ release-chart: build-chart
 # SECURITY
 ########################################
 
-trivy:
+trivy: build-release-image
     trivy image --severity HIGH,CRITICAL {{ image }}:{{ version }}
 
 dockle:
